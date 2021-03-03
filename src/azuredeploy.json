@@ -65,8 +65,8 @@
     "inputDatasetName": "blob_dataset",
     "outputDatasetName": "sql_server_dataset",
     "pipelineName": "nfha_data_pipeline",
-    "storageAccountName": "[concat(uniqueString(resourceGroup().id),'nfhastorage')]",
-    "serverName": "[concat('nfha-sqlserver-', uniqueString(resourceGroup().id))]",
+    "storageAccountName": "[concat(uniqueString(resourceGroup().id),'nfha-storage')]",
+    "serverName": "[concat('server', uniqueString(resourceGroup().id))]",
     "databaseName": "nfha-reporting-db",
     "databaseCollation": "SQL_Latin1_General_CP1_CI_AS",
     "databaseEdition": "Basic",
@@ -76,7 +76,7 @@
     {
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[variables('storageAccountName')]",
-      "apiVersion": "2019-06-01",
+      "apiVersion": "2016-01-01",
       "location": "[parameters('location')]",
       "comments": "Storage account ",
       "tags": {
@@ -86,17 +86,7 @@
         "name": "Standard_LRS"
       },
       "kind": "Storage",
-      "properties": {},
-      "resources": [
-        {
-          "type": "containers",
-          "apiVersion": "2019-06-01",
-          "name": "[parameters('blobContainer')]",
-          "dependsOn": [
-            "[variables('storageAccountName')]"
-          ]
-        }
-      ]
+      "properties": {}
     },
     {
       "name": "[variables('serverName')]",
@@ -158,7 +148,7 @@
           "dependsOn": [
             "[parameters('dataFactoryName')]"
           ],
-          "apiVersion": "2018-06-01",
+          "apiVersion": "2017-09-01-preview",
           "properties": {
             "type": "AzureStorage",
             "description": "Azure Storage linked service",
@@ -176,7 +166,7 @@
           "dependsOn": [
             "[parameters('dataFactoryName')]"
           ],
-          "apiVersion": "2018-06-01",
+          "apiVersion": "2017-09-01-preview",
           "properties": {
             "type": "AzureSqlDatabase",
             "description": "Azure SQL Database linked service",
@@ -195,7 +185,7 @@
             "[parameters('dataFactoryName')]",
             "[variables('azureStorageLinkedServiceName')]"
           ],
-          "apiVersion": "2018-06-01",
+          "apiVersion": "2017-09-01-preview",
           "properties": {
             "type": "AzureBlob",
             "structure": [
@@ -232,7 +222,7 @@
             "[parameters('dataFactoryName')]",
             "[variables('azureSqlDatabaseLinkedServiceName')]"
           ],
-          "apiVersion": "2018-06-01",
+          "apiVersion": "2017-09-01-preview",
           "properties": {
             "type": "AzureSqlTable",
             "structure": [
@@ -262,7 +252,7 @@
             "[variables('inputDatasetName')]",
             "[variables('outputDatasetName')]"
           ],
-          "apiVersion": "2018-06-01",
+          "apiVersion": "2017-09-01-preview",
           "properties": {
             "activities": [
               {
