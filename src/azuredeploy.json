@@ -65,7 +65,7 @@
     "inputDatasetName": "blob_dataset",
     "outputDatasetName": "sql_server_dataset",
     "pipelineName": "nfha_data_pipeline",
-    "storageAccountName": "[concat(uniqueString(resourceGroup().id),'nfha-storage')]",
+    "storageAccountName": "nfha-blob-storage",
     "serverName": "[concat('server', uniqueString(resourceGroup().id))]",
     "databaseName": "nfha-reporting-db",
     "databaseCollation": "SQL_Latin1_General_CP1_CI_AS",

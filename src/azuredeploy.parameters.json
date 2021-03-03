@@ -9,7 +9,7 @@
       "value": "East US"
     },
     "blobContainer": {
-      "value": "hmda_container"
+      "value": "hmda-container"
     },
     "inputBlobFolder": {
       "value": "hmda-raw"
