@@ -19,6 +19,12 @@
     },
     "sqlTableName": {
       "value": "[dbo].[hmda_raw_data]"
-    }
+    },
+    "databaseAdminUsername": {
+      "value": "adm"
+    },
+    "databaseAdminPassword": {
+      "value": "Od32S3DyXU0^"
+  }
   }
 }

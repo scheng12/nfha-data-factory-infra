@@ -2,6 +2,25 @@
   "contentVersion": "1.0.0.0",
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "parameters": {
+    "databaseAdminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Username for DB Admin"
+      }
+    },
+    "databaseAdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for DB Admin"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
     "dataFactoryName": {
       "type": "string",
       "metadata": {
@@ -45,27 +64,76 @@
     "azureSqlDatabaseLinkedServiceName": "sql_server_nfha",
     "inputDatasetName": "blob_dataset",
     "outputDatasetName": "sql_server_dataset",
-    "pipelineName": "nfha_data_pipeline"
+    "pipelineName": "nfha_data_pipeline",
+    "storageAccountName": "[concat(uniqueString(resourceGroup().id),'storage')]",
+    "serverName": "[concat('server', uniqueString(resourceGroup().id))]",
+    "databaseName": "nfha-reporting-db",
+    "databaseCollation": "SQL_Latin1_General_CP1_CI_AS",
+    "databaseEdition": "Basic",
+    "databaseRequestedServiceObjectiveName": "Basic"
   },
   "resources": [
     {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2020-06-01",
-      "name": "linkedTemplate",
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('storageAccountName')]",
+      "apiVersion": "2016-01-01",
+      "location": "[parameters('location')]",
+      "comments": "Storage account ",
+      "tags": {
+        "displayName": "Storage Account"
+      },
+      "sku": {
+        "name": "Standard_LRS"
+      },
+      "kind": "Storage",
+      "properties": {}
+    },
+    {
+      "name": "[variables('serverName')]",
+      "type": "Microsoft.Sql/servers",
+      "location": "[parameters('location')]",
+      "apiVersion": "2019-06-01-preview",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "server"
+      },
       "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "relativePath": "prereqs/prereq.azuredeploy.json"
+        "administratorLogin": "[parameters('databaseAdminUsername')]",
+        "administratorLoginPassword": "[parameters('databaseAdminPassword')]"
+      },
+      "resources": [
+        {
+          "name": "AllowAllWindowsAzureIps",
+          "type": "firewallrules",
+          "location": "East US",
+          "apiVersion": "2014-04-01",
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', variables('serverName'))]"
+          ],
+          "properties": {
+            "startIpAddress": "0.0.0.0",
+            "endIpAddress": "0.0.0.0"
+          }
         },
-        "parameters": {
-          "databaseAdminUsername": {
-              "value": "adm"
+        {
+          "name": "[variables('databaseName')]",
+          "type": "databases",
+          "location": "[parameters('location')]",
+          "apiVersion": "2014-04-01",
+          "dependsOn": [
+            "[resourceId('Microsoft.Sql/servers', variables('serverName'))]"
+          ],
+          "tags": {
+            "displayName": "database"
           },
-          "databaseAdminPassword": {
-              "value": "Od32S3DyXU0^"
+          "properties": {
+            "collation": "[variables('databaseCollation')]",
+            "edition": "[variables('databaseEdition')]",
+            "maxSizeBytes": "1073741824",
+            "requestedServiceObjectiveName": "[variables('databaseRequestedServiceObjectiveName')]"
           }
         }
-      }
+      ]
     },
     {
       "name": "[parameters('dataFactoryName')]",
@@ -86,7 +154,7 @@
             "description": "Azure Storage linked service",
             "typeProperties": {
               "connectionString": {
-                "value": "[reference('linkedTemplate').outputs.AzureStorage_connectionString.value]",
+                "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName')), '2016-01-01').keys[0].value)]",
                 "type": "SecureString"
               }
             }
@@ -104,7 +172,7 @@
             "description": "Azure SQL Database linked service",
             "typeProperties": {
               "connectionString": {
-                "value": "[reference('linkedTemplate').outputs.greetingMessage.value]",
+                "value": "[concat('Server=tcp:', variables('serverName'),'.database.windows.net,1433;Initial Catalog=',variables('databaseName'), ';Persist Security Info=False;User ID=', parameters('databaseAdminUsername'), ';Password=', parameters('databaseAdminPassword'), ';Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;')]",
                 "type": "SecureString"
               }
             }
