@@ -1,0 +1,217 @@
+{
+  "contentVersion": "1.0.0.0",
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "parameters": {
+    "dataFactoryName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the data factory. Must be globally unique."
+      }
+    },
+    "dataFactoryLocation": {
+      "type": "string",
+      "defaultValue": "East US",
+      "metadata": {
+        "description": "Location of the data factory."
+      }
+    },
+    "blobContainer": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the blob container in the Azure Storage account."
+      }
+    },
+    "inputBlobFolder": {
+      "type": "string",
+      "metadata": {
+        "description": "The folder in the blob container that has the input file."
+      }
+    },
+    "inputBlobName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the input file/blob."
+      }
+    },
+    "sqlTableName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the target table in the Azure SQL database."
+      }
+    }
+  },
+  "variables": {
+    "azureStorageLinkedServiceName": "ls_blob_nfha",
+    "azureSqlDatabaseLinkedServiceName": "sql_server_nfha",
+    "inputDatasetName": "blob_dataset",
+    "outputDatasetName": "sql_server_dataset",
+    "pipelineName": "nfha_data_pipeline"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2017-09-01-preview",
+      "name": "linkedTemplate",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "relativePath": "prereqs/prereq.azuredeploy.json"
+        },
+        "parametersLink": {
+          "relativePath": "prereqs/prereq.azuredeploy.parameters.json"
+        }
+      }
+    },
+    {
+      "name": "[parameters('dataFactoryName')]",
+      "apiVersion": "2017-09-01-preview",
+      "type": "Microsoft.DataFactory/factories",
+      "location": "[parameters('dataFactoryLocation')]",
+      "properties": {},
+      "resources": [
+        {
+          "type": "linkedservices",
+          "name": "[variables('azureStorageLinkedServiceName')]",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]"
+          ],
+          "apiVersion": "2017-09-01-preview",
+          "properties": {
+            "type": "AzureStorage",
+            "description": "Azure Storage linked service",
+            "typeProperties": {
+              "connectionString": {
+                "value": "[reference('linkedTemplate').outputs.AzureStorage_connectionString.value]",
+                "type": "SecureString"
+              }
+            }
+          }
+        },
+        {
+          "type": "linkedservices",
+          "name": "[variables('azureSqlDatabaseLinkedServiceName')]",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]"
+          ],
+          "apiVersion": "2017-09-01-preview",
+          "properties": {
+            "type": "AzureSqlDatabase",
+            "description": "Azure SQL Database linked service",
+            "typeProperties": {
+              "connectionString": {
+                "value": "[reference('linkedTemplate').outputs.greetingMessage.value]",
+                "type": "SecureString"
+              }
+            }
+          }
+        },
+        {
+          "type": "datasets",
+          "name": "[variables('inputDatasetName')]",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]",
+            "[variables('azureStorageLinkedServiceName')]"
+          ],
+          "apiVersion": "2017-09-01-preview",
+          "properties": {
+            "type": "AzureBlob",
+            "structure": [
+              {
+                "name": "Prop_0",
+                "type": "string"
+              },
+              {
+                "name": "Prop_1",
+                "type": "string"
+              }
+            ],
+            "typeProperties": {
+              "format": {
+                "type": "TextFormat",
+                "columnDelimiter": ",",
+                "nullValue": "\\N",
+                "treatEmptyAsNull": false,
+                "firstRowAsHeader": false
+              },
+              "folderPath": "[concat(parameters('blobContainer'), '/', parameters('inputBlobFolder'), '/')]",
+              "fileName": "[parameters('inputBlobName')]"
+            },
+            "linkedServiceName": {
+              "referenceName": "[variables('azureStorageLinkedServiceName')]",
+              "type": "LinkedServiceReference"
+            }
+          }
+        },
+        {
+          "type": "datasets",
+          "name": "[variables('outputDatasetName')]",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]",
+            "[variables('azureSqlDatabaseLinkedServiceName')]"
+          ],
+          "apiVersion": "2017-09-01-preview",
+          "properties": {
+            "type": "AzureSqlTable",
+            "structure": [
+              {
+                "name": "FirstName",
+                "type": "string"
+              },
+              {
+                "name": "LastName",
+                "type": "string"
+              }
+            ],
+            "typeProperties": {
+              "tableName": "[parameters('sqlTableName')]"
+            },
+            "linkedServiceName": {
+              "referenceName": "[variables('azureSqlDatabaseLinkedServiceName')]",
+              "type": "LinkedServiceReference"
+            }
+          }
+        },
+        {
+          "type": "pipelines",
+          "name": "[variables('pipelineName')]",
+          "dependsOn": [
+            "[parameters('dataFactoryName')]",
+            "[variables('inputDatasetName')]",
+            "[variables('outputDatasetName')]"
+          ],
+          "apiVersion": "2017-09-01-preview",
+          "properties": {
+            "activities": [
+              {
+                "type": "Copy",
+                "typeProperties": {
+                  "source": {
+                    "type": "BlobSource",
+                    "recursive": true
+                  },
+                  "sink": {
+                    "type": "SqlSink",
+                    "writeBatchSize": 10000
+                  }
+                },
+                "name": "MyCopyActivity",
+                "inputs": [
+                  {
+                    "referenceName": "[variables('inputDatasetName')]",
+                    "type": "DatasetReference"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "referenceName": "[variables('outputDatasetName')]",
+                    "type": "DatasetReference"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
