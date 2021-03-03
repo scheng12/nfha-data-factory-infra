@@ -91,7 +91,7 @@
         {
           "type": "containers",
           "apiVersion": "2019-06-01",
-          "name": "[concat('default/', parameters('blobContainer'))]",
+          "name": "[parameters('blobContainer')]",
           "dependsOn": [
             "[variables('storageAccountName')]"
           ]
