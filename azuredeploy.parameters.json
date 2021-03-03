@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "dataFactoryName": {
-      "value": "GEN-UNIQUE"
+      "value": "nfha-datafactory"
     },    
     "dataFactoryLocation": {
       "value": "East US"
@@ -15,16 +15,16 @@
       "value": "GET-PREREQ-AzureSqlDatabase_connectionString"
     },
     "blobContainer": {
-      "value": "adftutorial"
+      "value": "hmda-data-container"
     },
     "inputBlobFolder": {
-      "value": "input"
+      "value": "hmda-raw"
     },
     "inputBlobName": {
-      "value": "emp.txt"
+      "value": "hmda.csv"
     },
     "sqlTableName": {
-      "value": "[dbo].[emp]"
+      "value": "[dbo].[hmda_raw_data]"
     }
   }
 }

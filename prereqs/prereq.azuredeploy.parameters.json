@@ -3,10 +3,10 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "databaseAdminUsername": {
-            "value": "GEN-UNIQUE"
+            "value": "adm"
         },
         "databaseAdminPassword": {
-            "value": "GEN-PASSWORD"
+            "value": "Od32S3DyXU0^"
         }
     }
 }
