@@ -1,2 +1,1 @@
-
-
+This repo contains ARM templates that stand up Azure resources for Azure SQL Server and DataFactory 
